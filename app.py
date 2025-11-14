@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
 from functools import wraps, lru_cache
-
+from urllib.parse import unquote
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
 DEFAULT_BOOK_COVER = 'fs_book_cover-5f4eddfb.png'
@@ -507,54 +507,97 @@ def book_detail(book_id):
                          book=book, 
                          is_favorite=is_favorite)
 
-@app.route('/category/<main_category>')
-def category_main(main_category):
-    if main_category not in CATEGORIES:
-        return render_template('404.html', message='Danh mục không tìm thấy'), 404
-    
-    books = get_books_by_category(main_category)
-    subcategories = CATEGORIES[main_category]
-    
-    return render_template('category_main.html', 
-                         main_category=main_category,
-                         subcategories=subcategories,
-                         books=books,
-                         categories=CATEGORIES)
+@app.route('/category/<category>')
+def category_main(category):
+    try:
+        # Decode URL encoding
+        category = unquote(category)
+        
+        if category not in CATEGORIES:
+            return render_template('error.html', 
+                                 error='Danh mục không tìm thấy'), 404
+        
+        books = get_books_by_category(category)
+        subcategories = CATEGORIES[category]
+        
+        return render_template('category_main.html', 
+                             main_category=category,
+                             subcategories=subcategories,
+                             books=books,
+                             categories=CATEGORIES)
+    except Exception as e:
+        print(f"Error in category_main: {str(e)}")
+        return render_template('error.html', 
+                             error=f'Lỗi: {str(e)}'), 500
+
 
 @app.route('/category/<main_category>/<subcategory>')
 def category_detail(main_category, subcategory):
-    if main_category not in CATEGORIES or subcategory not in CATEGORIES[main_category]:
-        return render_template('404.html', message='Danh mục không tìm thấy'), 404
-    
-    books = get_books_by_category(main_category, subcategory)
-    
-    return render_template('category_detail.html', 
-                         main_category=main_category,
-                         subcategory=subcategory,
-                         books=books,
-                         categories=CATEGORIES)
+    try:
+        # Decode URL encoding
+        main_category = unquote(main_category)
+        subcategory = unquote(subcategory)
+        
+        if main_category not in CATEGORIES or subcategory not in CATEGORIES[main_category]:
+            return render_template('error.html', 
+                                 error='Danh mục không tìm thấy'), 404
+        
+        books = get_books_by_category(main_category, subcategory)
+        
+        return render_template('category_detail.html', 
+                             main_category=main_category,
+                             subcategory=subcategory,
+                             books=books,
+                             categories=CATEGORIES)
+    except Exception as e:
+        print(f"Error in category_detail: {str(e)}")
+        return render_template('error.html', 
+                             error=f'Lỗi: {str(e)}'), 500
+
 
 @app.route('/search')
 def search():
-    query = request.args.get('q', '').strip()
-    category_filter = request.args.get('category', '')
-    
-    all_books = get_all_books()
-    results = []
-    
-    if query:
-        results = [b for b in all_books if 
-                  query.lower() in b['title'].lower() or 
-                  query.lower() in b['author'].lower() or
-                  query.lower() in b['description'].lower()]
-    
-    if category_filter and category_filter != 'all':
-        results = [b for b in results if b['category'] == category_filter]
-    
-    return render_template('search.html', 
-                         search_results=results,
-                         search_query=query,
-                         categories=CATEGORIES)
+    try:
+        query = request.args.get('q', '').strip()
+        category_filter = request.args.get('category', '')
+        
+        all_books = get_all_books()
+        results = []
+        
+        if query:
+            results = [b for b in all_books 
+                      if query.lower() in b.get('title', '').lower() 
+                      or query.lower() in b.get('author', '').lower()]
+        
+        if category_filter and category_filter != 'all':
+            results = [b for b in results if b.get('category') == category_filter]
+        
+        return render_template('search.html', 
+                             search_results=results,
+                             search_query=query,
+                             categories=CATEGORIES)
+    except Exception as e:
+        print(f"Error in search: {str(e)}")
+        return render_template('error.html', 
+                             error=f'Lỗi: {str(e)}'), 500
+
+# ============ ERROR HANDLERS ============
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('error.html', 
+                         message='Trang không tìm thấy'), 404
+
+@app.errorhandler(500)
+def server_error(error):
+    print(f"Server Error: {str(error)}")
+    return render_template('error.html', 
+                         error=str(error)), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print(f"Exception: {str(e)}")
+    return render_template('error.html', 
+                         error=str(e)), 500
 
 # ...existing code...
 
