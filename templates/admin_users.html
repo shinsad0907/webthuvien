@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Học sinh - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .admin-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .admin-sidebar-brand {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-sidebar-brand i {
+            color: #FF69B4;
+            font-size: 24px;
+        }
+        .admin-nav {
+            list-style: none;
+        }
+        .admin-nav li {
+            margin-bottom: 10px;
+        }
+        .admin-nav a {
+            display: block;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: #FF69B4;
+            color: white;
+        }
+        .admin-nav i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .admin-main {
+            margin-left: 250px;
+            flex: 1;
+        }
+        .admin-header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin: 0;
+        }
+        .admin-header-user a {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .admin-content {
+            padding: 30px;
+        }
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #ecf0f1;
+            border-radius: 6px;
+            width: 250px;
+        }
+        .add-btn {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .add-btn:hover {
+            transform: translateY(-2px);
+        }
+        .users-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-edit, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .btn-submit, .btn-cancel {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .btn-submit {
+            background: #FF69B4;
+            color: white;
+        }
+        .btn-cancel {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                <i class="fas fa-book"></i>
+                <span>Shin.vltl Admin</span>
+            </div>
+            
+            <ul class="admin-nav">
+                <li><a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list"></i> Danh mục</a></li>
+                <li><a href="/admin/books"><i class="fas fa-book-open"></i> Sách</a></li>
+                <li><a href="/admin/users" class="active"><i class="fas fa-users"></i> Học sinh</a></li>
+                <li><a href="/admin/borrowed"><i class="fas fa-hand-holding-heart"></i> Sách mượn</a></li>
+                <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
+                    <a href="/"><i class="fas fa-globe"></i> Về trang chủ</a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="admin-header-title">
+                    <h1><i class="fas fa-users"></i> Quản lý Học sinh</h1>
+                </div>
+                <div class="admin-header-user">
+                    <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </div>
+            </div>
+            <div class="modal" id="importModal">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2>Import học sinh từ file</h2>
+                        <button class="modal-close" onclick="closeImportModal()">&times;</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; font-size: 13px; color: #27ae60;">
+                        <strong>📋 Hướng dẫn:</strong><br>
+                        ✓ File định dạng: .txt hoặc .csv<br>
+                        ✓ Phân cách bằng: <code>|</code> (dấu pipe)<br>
+                        ✓ Bắt buộc: Mã thẻ | Tên | Email | SĐT<br>
+                        ✓ Tuỳ chọn: Mật khẩu (dòng cuối)
+                    </div>
+                    
+                    <div style="margin-bottom: 15px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <strong>📝 Ví dụ:</strong><br>
+                        <code style="font-size: 11px;">
+                            TV001|Nguyễn Văn A|vana@example.com|0123456789<br>
+                            TV002|Trần Thị B|thib@example.com|0987654321|password123
+                        </code>
+                    </div>
+                    
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Chọn file *</label>
+                            <input type="file" id="importFile" accept=".txt,.csv" required>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <a href="/admin/download-template/students" style="color: #FF69B4; text-decoration: none; font-size: 13px;">
+                                📥 Tải template mẫu
+                            </a>
+                        </div>
+                        
+                        <div id="importProgress" style="display: none; margin-bottom: 15px;">
+                            <div style="background: #f0f0f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                                <div id="progressBar" style="background: #FF69B4; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <p id="progressText" style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">Đang xử lý...</p>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="closeImportModal()">Hủy</button>
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-upload"></i> Import
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="admin-content">
+                <div id="alertContainer"></div>
+                
+                <!-- Thay thế phần content-header: -->
+                <div class="content-header">
+                    <div>
+                        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Tìm kiếm học sinh...">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="add-btn" onclick="showImportModal()">
+                            <i class="fas fa-upload"></i> Import từ file
+                        </button>
+                        <button class="add-btn" onclick="showAddModal()">
+                            <i class="fas fa-plus"></i> Thêm học sinh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã thẻ</th>
+                                <th>Tên</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Đang mượn</th>
+                                <th>Yêu thích</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Thêm học sinh mới</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Mã thẻ *</label>
+                    <input type="text" id="cardId" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Họ và tên *</label>
+                    <input type="text" id="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email">
+                </div>
+                
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" id="phone">
+                </div>
+                
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="password" value="password123">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn-submit">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let currentUserId = null;
+        
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+        
+        function loadUsers() {
+            fetch('/admin/api/users')
+                .then(r => r.json())
+                .then(users => {
+                    const table = document.getElementById('usersTable');
+                    table.innerHTML = users.map(user => `
+                        <tr>
+                            <td><strong>${user.card_id}</strong></td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.phone}</td>
+                            <td><span style="background: #e8f5e9; color: #27ae60; padding: 4px 8px; border-radius: 4px;">${user.borrowed_count}</span></td>
+                            <td><span style="background: #ffe0f0; color: #FF69B4; padding: 4px 8px; border-radius: 4px;">${user.favorite_count}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-edit" onclick="editUser('${user.card_id}')">✏️ Sửa</button>
+                                    <button class="btn-delete" onclick="deleteUser('${user.card_id}')">🗑️ Xóa</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+        
+        function showAddModal() {
+            currentUserId = null;
+            document.getElementById('modalTitle').textContent = 'Thêm học sinh mới';
+            document.getElementById('userForm').reset();
+            document.getElementById('cardId').disabled = false;
+            document.getElementById('userModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('show');
+        }
+        
+        function editUser(cardId) {
+            currentUserId = cardId;
+            document.getElementById('modalTitle').textContent = 'Chỉnh sửa học sinh';
+            
+            fetch(`/admin/api/user/${cardId}`)
+                .then(r => r.json())
+                .then(user => {
+                    document.getElementById('cardId').value = user.card_id;
+                    document.getElementById('cardId').disabled = true;
+                    document.getElementById('name').value = user.name;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('phone').value = user.phone;
+                    document.getElementById('userModal').classList.add('show');
+                });
+        }
+        
+        function deleteUser(cardId) {
+            if (confirm('Bạn chắc chắn muốn xóa học sinh này?')) {
+                fetch(`/admin/api/delete-user/${cardId}`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('Học sinh đã được xóa', 'success');
+                            loadUsers();
+                        } else {
+                            showAlert(data.message, 'error');
+                        }
+                    });
+            }
+        }
+        
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                card_id: document.getElementById('cardId').value,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value
+            };
+            
+            const url = currentUserId 
+                ? `/admin/api/edit-user/${currentUserId}`
+                : '/admin/api/add-user';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    showAlert(res.message, 'success');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    showAlert(res.message, 'error');
+                }
+            });
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+        
+        document.getElementById('userModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        loadUsers();
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('show');
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+            document.getElementById('importForm').reset();
+        }
+        
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('Vui lòng chọn file', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('importProgress').style.display = 'block';
+            
+            fetch('/admin/import-students', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('importProgress').style.display = 'none';
+                
+                if (data.success) {
+                    showAlert(`✓ ${data.message}`, 'success');
+                    if (data.errors.length > 0) {
+                        console.log('Lỗi:', data.errors);
+                    }
+                    closeImportModal();
+                    setTimeout(() => loadUsers(), 1000);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(err => {
+                document.getElementById('importProgress').style.display = 'none';
+                showAlert('Lỗi tải file', 'error');
+                console.error(err);
+            });
+        });
+        
+        document.getElementById('importModal').addEventListener('click', function(e) {
+            if (e.target === this) closeImportModal();
+        });
+    </script>
+</body>
+</html>

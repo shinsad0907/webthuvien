@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 50px 40px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .auth-header i {
+            font-size: 50px;
+            color: #2c7873;
+            margin-bottom: 15px;
+        }
+
+        .auth-header h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-group input:focus {
+            border-color: #2c7873;
+            box-shadow: 0 0 0 3px rgba(44, 120, 115, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #bdc3c7;
+        }
+
+        .error-message {
+            background: #fadbd8;
+            color: #c0392b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c0392b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .error-message i {
+            font-size: 16px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2c7873, #1e5f5b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(44, 120, 115, 0.3);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .auth-footer p {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .auth-footer a {
+            color: #2c7873;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .auth-footer a:hover {
+            color: #1e5f5b;
+            text-decoration: underline;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .demo-info {
+            background: #d5f4e6;
+            border-left: 4px solid #27ae60;
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 12px;
+            color: #27ae60;
+        }
+
+        .demo-info strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #1e8449;
+        }
+
+        .demo-item {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0;">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-book-open"></i>
+                <h1>Đăng nhập</h1>
+                <p>Vào thư viện điện tử Shin.vltl</p>
+            </div>
+
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div class="demo-info">
+                <strong><i class="fas fa-info-circle"></i> Thông tin demo:</strong>
+                <div class="demo-item">Mã thẻ: <strong>TV001</strong></div>
+                <div class="demo-item">Mật khẩu: <strong>password123</strong></div>
+            </div>
+
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label for="card_id">
+                        <i class="fas fa-id-card"></i> Mã số thẻ thư viện
+                    </label>
+                    <input 
+                        type="text" 
+                        id="card_id" 
+                        name="card_id" 
+                        placeholder="VD: TV001" 
+                        required
+                        style="text-transform: uppercase;"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Mật khẩu
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="nhập mật khẩu" 
+                        required
+                    >
+                </div>
+
+                <div class="forgot-password">
+                    <a href="/forgot-password">
+                        <i class="fas fa-question-circle"></i> Quên mật khẩu?
+                    </a>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Chưa có tài khoản?</p>
+                <a href="/register">
+                    <i class="fas fa-user-plus"></i> Đăng ký ngay
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tự động chuyển thành chữ hoa
+        document.getElementById('card_id').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .admin-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .admin-sidebar-brand {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-sidebar-brand i {
+            color: #FF69B4;
+            font-size: 24px;
+        }
+        .admin-nav {
+            list-style: none;
+        }
+        .admin-nav li {
+            margin-bottom: 10px;
+        }
+        .admin-nav a {
+            display: block;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: #FF69B4;
+            color: white;
+        }
+        .admin-nav i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .admin-main {
+            margin-left: 250px;
+            flex: 1;
+        }
+        .admin-header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin: 0;
+        }
+        .admin-header-title p {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin: 5px 0 0 0;
+        }
+        .admin-header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .admin-header-user span {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        .admin-header-user a {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+        .admin-header-user a:hover {
+            background: #c0392b;
+        }
+        .admin-content {
+            padding: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-top: 4px solid #FF69B4;
+        }
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .stat-card-label {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        .stat-card-icon {
+            font-size: 28px;
+            color: #FF69B4;
+            opacity: 0.2;
+            text-align: right;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .stat-card {
+            position: relative;
+        }
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            font-size: 14px;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px);
+        }
+        .welcome-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .welcome-section h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .welcome-section p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                <i class="fas fa-book"></i>
+                <span>Shin.vltl Admin</span>
+            </div>
+            
+            <ul class="admin-nav">
+                <li><a href="/admin" class="active"><i class="fas fa-dashboard"></i> Dashboard</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list"></i> Danh mục</a></li>
+                <li><a href="/admin/books"><i class="fas fa-book-open"></i> Sách</a></li>
+                <li><a href="/admin/users"><i class="fas fa-users"></i> Học sinh</a></li>
+                <li><a href="/admin/borrowed"><i class="fas fa-hand-holding-heart"></i> Sách mượn</a></li>
+                <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
+                    <a href="/"><i class="fas fa-globe"></i> Về trang chủ</a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="admin-header-title">
+                    <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+                    <p>Tổng quan quản lý hệ thống thư viện</p>
+                </div>
+                <div class="admin-header-user">
+                    <span>👤 {{ session.admin_user }}</span>
+                    <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="admin-content">
+                <div class="welcome-section">
+                    <h2>👋 Chào mừng, {{ session.admin_user }}!</h2>
+                    <p>Bạn đang ở trang quản lý hệ thống thư viện điện tử Shin.vltl. Từ đây bạn có thể quản lý danh mục, sách, học sinh và các mượn sách.</p>
+                </div>
+                
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon"><i class="fas fa-book"></i></div>
+                        <div class="stat-card-label">Tổng số sách</div>
+                        <div class="stat-card-value">{{ stats.total_books }}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-card-label">Tổng học sinh</div>
+                        <div class="stat-card-value">{{ stats.total_users }}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                        <div class="stat-card-label">Sách đang mượn</div>
+                        <div class="stat-card-value">{{ stats.total_borrowed }}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-icon"><i class="fas fa-list"></i></div>
+                        <div class="stat-card-label">Danh mục</div>
+                        <div class="stat-card-value">{{ stats.categories }}</div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <h3 style="color: #2c3e50; margin-bottom: 15px; margin-top: 30px;">⚡ Quản lý nhanh</h3>
+                <div class="admin-actions">
+                    <a href="/admin/categories" class="action-btn">
+                        <i class="fas fa-plus"></i> Danh mục
+                    </a>
+                    <a href="/admin/books" class="action-btn">
+                        <i class="fas fa-plus"></i> Sách
+                    </a>
+                    <a href="/admin/users" class="action-btn">
+                        <i class="fas fa-plus"></i> Học sinh
+                    </a>
+                    <a href="/admin/borrowed" class="action-btn">
+                        <i class="fas fa-plus"></i> Mượn sách
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

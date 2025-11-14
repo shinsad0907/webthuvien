@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <p style="margin: 0; font-size: 12px; font-weight: 500; opacity: 0.95;">Hệ thống thư viện điện tử</p>
+                        <h1 style="margin: 2px 0 0 0;">Shin.vltl</h1>
+                        <p style="margin: 0; font-size: 12px; font-weight: 500; opacity: 0.95;">Trường Tiểu học Lê Văn Tám</p>
+                    </div>
+                </div>
+                <div style="flex: 1;"></div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: white;">👋 {{ session.user_name }}</span>
+                    <a href="/profile" style="color: white; text-decoration: none; padding: 10px 15px; background: rgba(255,255,255,0.2); border-radius: 25px;">
+                        <i class="fas fa-user-circle"></i> Hồ sơ
+                    </a>
+                    <a href="/logout" style="color: white; text-decoration: none; padding: 10px 15px; background: #e74c3c; border-radius: 25px;">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="/"><i class="fas fa-home"></i> TRANG CHỦ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Profile Content -->
+    <div class="container" style="margin: 40px auto; max-width: 1200px;">
+        <!-- User Info Header -->
+        <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <div style="font-size: 80px; color: #2c7873;">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div>
+                    <h1 style="color: #2c3e50; margin: 0 0 10px 0;">{{ user_info.name }}</h1>
+                    <p style="color: #7f8c8d; margin: 0 0 15px 0;">Mã thẻ: <strong>{{ card_id }}</strong></p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div>
+                            <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 5px 0;">Email</p>
+                            <p style="color: #2c3e50; margin: 0;">{{ user_info.email }}</p>
+                        </div>
+                        <div>
+                            <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 5px 0;">Số điện thoại</p>
+                            <p style="color: #2c3e50; margin: 0;">{{ user_info.phone }}</p>
+                        </div>
+                        <div>
+                            <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 5px 0;">Trạng thái</p>
+                            <p style="color: #27ae60; margin: 0;"><i class="fas fa-check-circle"></i> Hoạt động</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 40px;">
+            <h2 style="color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-book-open" style="color: #FF69B4;"></i> Sách Đã Mượn
+                <span style="background: #FF69B4; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                    {{ user_info.borrowed_books|length }}
+                </span>
+            </h2>
+
+            {% if user_info.borrowed_books|length > 0 %}
+                <div style="display: grid; gap: 15px;">
+                    {% for book in user_info.borrowed_books %}
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #FF69B4; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; color: #2c3e50;">{{ book.title }}</h4>
+                            <p style="margin: 0; font-size: 12px; color: #7f8c8d;">
+                                📅 Ngày mượn: <strong>{{ book.borrow_date }}</strong> | 
+                                ⏰ Hạn trả: <strong>{{ book.due_date }}</strong>
+                            </p>
+                        </div>
+                        <span style="background: #e8f5e9; color: #27ae60; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ book.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="/borrowed-books" style="display: inline-block; margin-top: 15px; color: #FF69B4; text-decoration: none; font-weight: 600;">
+                    Xem chi tiết → 
+                </a>
+            {% else %}
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; color: #7f8c8d;">
+                    <i class="fas fa-inbox" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
+                    Bạn chưa mượn cuốn sách nào
+                </div>
+            {% endif %}
+        </div>
+        <!-- Favorite Books -->
+        {% if favorite_books|length > 0 %}
+        <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+            <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-heart" style="color: #e74c3c;"></i> 
+                Sách yêu thích ({{ favorite_books_count }})
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                {% for book in favorite_books %}
+                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <img src="{{ url_for('static', filename='images/' + (book.cover|cover)) }}" 
+                        alt="{{ book.title }}"
+                        loading="lazy" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="padding: 12px;">
+                        <h5 style="margin: 0 0 6px 0; color: #2c3e50; font-size: 13px;">{{ book.title }}</h5>
+                        <p style="margin: 0; color: #7f8c8d; font-size: 11px;">{{ book.author }}</p>
+                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                           style="display: inline-block; margin-top: 8px; color: #3498db; text-decoration: none; font-size: 11px; font-weight: 600;">
+                            Xem chi tiết →
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div style="background: white; border-radius: 10px; padding: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+            <p style="color: #7f8c8d; margin: 0;">
+                <i class="fas fa-heart" style="font-size: 40px; color: #e74c3c; opacity: 0.3; margin-bottom: 10px; display: block;"></i>
+                Chưa có sách yêu thích
+            </p>
+            <a href="/" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #2c7873; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Khám phá sách
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 15px; margin-top: 30px; margin-bottom: 30px;">
+            <a href="/" style="flex: 1; padding: 14px; background: #2c7873; color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; transition: all 0.3s;">
+                <i class="fas fa-arrow-left"></i> Quay lại trang chủ
+            </a>
+            <a href="/logout" style="flex: 1; padding: 14px; background: #e74c3c; color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; transition: all 0.3s;">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p style="margin: 0;">
+                <strong>Shin.vltl - Hệ thống thư viện điện tử</strong><br>
+                Trường Tiểu học Lê Văn Tám
+            </p>
+            <p style="margin: 5px 0 0 0; font-size: 12px;">&copy; 2024 - Bảo lưu mọi quyền</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

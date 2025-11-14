@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sách Mượn - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .admin-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .admin-sidebar-brand {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-sidebar-brand i {
+            color: #FF69B4;
+            font-size: 24px;
+        }
+        .admin-nav {
+            list-style: none;
+        }
+        .admin-nav li {
+            margin-bottom: 10px;
+        }
+        .admin-nav a {
+            display: block;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: #FF69B4;
+            color: white;
+        }
+        .admin-nav i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .admin-main {
+            margin-left: 250px;
+            flex: 1;
+        }
+        .admin-header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin: 0;
+        }
+        .admin-header-user a {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .admin-content {
+            padding: 30px;
+        }
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #ecf0f1;
+            border-radius: 6px;
+            width: 250px;
+        }
+        .add-btn {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .add-btn:hover {
+            transform: translateY(-2px);
+        }
+        .borrowed-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-borrowed {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+        .status-overdue {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-return, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .btn-return {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-return:hover {
+            background: #229954;
+        }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .btn-submit, .btn-cancel {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .btn-submit {
+            background: #FF69B4;
+            color: white;
+        }
+        .btn-cancel {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                <i class="fas fa-book"></i>
+                <span>Shin.vltl Admin</span>
+            </div>
+            
+            <ul class="admin-nav">
+                <li><a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list"></i> Danh mục</a></li>
+                <li><a href="/admin/books"><i class="fas fa-book-open"></i> Sách</a></li>
+                <li><a href="/admin/users"><i class="fas fa-users"></i> Học sinh</a></li>
+                <li><a href="/admin/borrowed" class="active"><i class="fas fa-hand-holding-heart"></i> Sách mượn</a></li>
+                <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
+                    <a href="/"><i class="fas fa-globe"></i> Về trang chủ</a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="admin-header-title">
+                    <h1><i class="fas fa-hand-holding-heart"></i> Quản lý Sách Mượn</h1>
+                </div>
+                <div class="admin-header-user">
+                    <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="admin-content">
+                <div id="alertContainer"></div>
+                
+                <div class="content-header">
+                    <div>
+                        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Tìm kiếm...">
+                    </div>
+                    <button class="add-btn" onclick="showAddModal()">
+                        <i class="fas fa-plus"></i> Cấp sách cho học sinh
+                    </button>
+                </div>
+                
+                <div class="borrowed-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã thẻ</th>
+                                <th>Tên học sinh</th>
+                                <th>Tên sách</th>
+                                <th>Ngày mượn</th>
+                                <th>Hạn trả</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="borrowedTable">
+                            {% if borrowed_list|length > 0 %}
+                                {% for item in borrowed_list %}
+                                <tr>
+                                    <td><strong>{{ item.card_id }}</strong></td>
+                                    <td>{{ item.user_name }}</td>
+                                    <td>{{ item.book_title }}</td>
+                                    <td>{{ item.borrow_date }}</td>
+                                    <td>{{ item.due_date }}</td>
+                                    <td>
+                                        <span class="status-badge status-borrowed">
+                                            {{ item.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-return" onclick="returnBook('{{ item.card_id }}', {{ item.book_id }})">
+                                                ✓ Trả sách
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 40px;">
+                                        <i class="fas fa-inbox" style="font-size: 48px; opacity: 0.2; display: block; margin-bottom: 10px;"></i>
+                                        Chưa có sách đang mượn
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Modal -->
+    <div class="modal" id="borrowModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cấp sách cho học sinh</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="borrowForm">
+                <div class="form-group">
+                    <label>Chọn học sinh *</label>
+                    <select id="studentSelect" required>
+                        <option value="">-- Chọn học sinh --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Chọn sách *</label>
+                    <select id="bookSelect" required>
+                        <option value="">-- Chọn sách --</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn-submit">Cấp sách</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+        
+        function showAddModal() {
+            loadStudentSelect();
+            loadBookSelect();
+            document.getElementById('borrowModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('borrowModal').classList.remove('show');
+        }
+        
+        function loadStudentSelect() {
+            fetch('/admin/api/users')
+                .then(r => r.json())
+                .then(users => {
+                    const select = document.getElementById('studentSelect');
+                    select.innerHTML = '<option value="">-- Chọn học sinh --</option>' +
+                        users.map(u => `<option value="${u.card_id}">${u.card_id} - ${u.name}</option>`).join('');
+                });
+        }
+        
+        function loadBookSelect() {
+            fetch('/admin/api/books')
+                .then(r => r.json())
+                .then(books => {
+                    const select = document.getElementById('bookSelect');
+                    select.innerHTML = '<option value="">-- Chọn sách --</option>' +
+                        books.map(b => `<option value="${b.id}">${b.title} (Còn: ${b.available_copies})</option>`).join('');
+                });
+        }
+        
+        function returnBook(cardId, bookId) {
+            if (confirm('Bạn chắc chắn muốn xác nhận trả sách này?')) {
+                fetch('/admin/api/return-book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_id: cardId, book_id: bookId })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Sách đã được trả', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showAlert(data.message, 'error');
+                    }
+                });
+            }
+        }
+        
+        document.getElementById('borrowForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const cardId = document.getElementById('studentSelect').value;
+            const bookId = document.getElementById('bookSelect').value;
+            
+            if (!cardId || !bookId) {
+                showAlert('Vui lòng chọn học sinh và sách', 'error');
+                return;
+            }
+            
+            fetch('/admin/api/add-borrow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ card_id: cardId, book_id: bookId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Sách đã được cấp thành công', 'success');
+                    closeModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            });
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#borrowedTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+        
+        document.getElementById('borrowModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

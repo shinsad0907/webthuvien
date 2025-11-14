@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đọc: {{ book.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Header */
+        .reader-header {
+            background: linear-gradient(135deg, #2c7873, #1e5f5b);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .reader-title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .reader-title-section i {
+            font-size: 28px;
+        }
+
+        .reader-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .reader-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .reader-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .reader-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reader-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .reader-btn.primary {
+            background: #3498db;
+            border-color: #3498db;
+        }
+
+        .reader-btn.primary:hover {
+            background: #2980b9;
+            border-color: #2980b9;
+        }
+
+        /* Main Container */
+        .reader-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 30px;
+        }
+
+        /* PDF Viewer */
+        .pdf-viewer-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pdf-zoom-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pdf-zoom-btn {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .pdf-zoom-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .pdf-page-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #34495e;
+        }
+
+        .pdf-page-input {
+            width: 50px;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .pdf-nav-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        #pdf-container {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        #pdf-container canvas {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .no-pdf-message {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            color: #95a5a6;
+            font-size: 16px;
+        }
+
+        .no-pdf-message i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Sidebar */
+        .reader-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: #2c7873;
+        }
+
+        .book-info-small {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-row-small {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label-small {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2c7873;
+            margin-bottom: 3px;
+        }
+
+        .info-value-small {
+            font-size: 13px;
+            color: #34495e;
+            word-break: break-word;
+        }
+
+        .stats-small {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-small {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-number-small {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c7873;
+        }
+
+        .stat-label-small {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .action-buttons-small {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .btn-small.primary {
+            background: #2c7873;
+            color: white;
+        }
+
+        .btn-small.primary:hover {
+            background: #1e5f5b;
+        }
+
+        .btn-small.secondary {
+            background: #ecf0f1;
+            color: #34495e;
+            border: 1px solid #bdc3c7;
+        }
+
+        .btn-small.secondary:hover {
+            background: #d5dbdb;
+        }
+
+        .btn-small a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        /* Footer */
+        .reader-footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px 0 10px;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .reader-main {
+                grid-template-columns: 1fr;
+            }
+
+            .reader-sidebar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .reader-title {
+                font-size: 16px;
+            }
+
+            .reader-controls {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .pdf-controls {
+                flex-direction: column;
+            }
+
+            .reader-sidebar {
+                grid-template-columns: 1fr;
+            }
+
+            #pdf-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="reader-header">
+        <div class="header-content">
+            <div class="reader-title-section">
+                <i class="fas fa-book-open"></i>
+                <div>
+                    <div class="reader-title">{{ book.title }}</div>
+                    <div class="reader-subtitle">Chế độ đọc</div>
+                </div>
+            </div>
+            <div class="reader-controls">
+                <button class="reader-btn" id="zoomInBtn" onclick="zoomIn()" title="Phóng to">
+                    <i class="fas fa-search-plus"></i>
+                    <span>Phóng to</span>
+                </button>
+                <button class="reader-btn" id="zoomOutBtn" onclick="zoomOut()" title="Thu nhỏ">
+                    <i class="fas fa-search-minus"></i>
+                    <span>Thu nhỏ</span>
+                </button>
+                <button class="reader-btn" id="downloadBtn" onclick="downloadBook({{ book.id }})" title="Tải về">
+                    <i class="fas fa-download"></i>
+                    <span>Tải về</span>
+                </button>
+                <button class="reader-btn primary" onclick="goBack()" title="Đóng">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Quay lại</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="reader-main">
+        <!-- PDF Viewer -->
+        <div class="pdf-viewer-section">
+            {% if book.pdf_file %}
+            <div class="pdf-controls">
+                <div class="pdf-zoom-controls">
+                    <button class="pdf-zoom-btn" id="zoomOutBtn2" onclick="zoomOut()" title="Thu nhỏ">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="scaleDisplay" style="color: #34495e; font-weight: 600;">150%</span>
+                    <button class="pdf-zoom-btn" id="zoomInBtn2" onclick="zoomIn()" title="Phóng to">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="pdf-page-info">
+                    <span>Trang</span>
+                    <input type="number" id="page-num" class="pdf-page-input" value="1" min="1">
+                    <span>/</span>
+                    <span id="total-pages">0</span>
+                </div>
+
+                <div class="pdf-nav-buttons">
+                    <button class="pdf-zoom-btn" id="prevBtn" onclick="previousPage()" title="Trang trước">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="pdf-zoom-btn" id="nextBtn" onclick="nextPage()" title="Trang sau">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="pdf-container"></div>
+            {% else %}
+            <div id="pdf-container">
+                <div class="no-pdf-message">
+                    <i class="fas fa-file-pdf"></i>
+                    <p>Chưa có file PDF</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="reader-sidebar">
+            <!-- Book Info Card -->
+            <div class="sidebar-card">
+                <div class="card-title">
+                    <i class="fas fa-info-circle"></i> Thông tin sách
+                </div>
+                <div class="book-info-small">
+                    <div class="info-row-small">
+                        <span class="info-label-small">Tên sách:</span>
+                        <span class="info-value-small">{{ book.title }}</span>
+                    </div>
+                    <div class="info-row-small">
+                        <span class="info-label-small">Tác giả:</span>
+                        <span class="info-value-small">{{ book.get('author', 'N/A') }}</span>
+                    </div>
+                    <div class="info-row-small">
+                        <span class="info-label-small">Danh mục:</span>
+                        <span class="info-value-small">{{ book.category }}</span>
+                    </div>
+                    <div class="info-row-small">
+                        <span class="info-label-small">Lớp:</span>
+                        <span class="info-value-small">{{ book.get('subcategory', 'N/A') }}</span>
+                    </div>
+                    <div class="info-row-small">
+                        <span class="info-label-small">Nhà xuất bản:</span>
+                        <span class="info-value-small">{{ book.get('publisher', 'N/A') }}</span>
+                    </div>
+                    <div class="info-row-small">
+                        <span class="info-label-small">Năm:</span>
+                        <span class="info-value-small">{{ book.get('year', 'N/A') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="sidebar-card">
+                <div class="card-title">
+                    <i class="fas fa-chart-bar"></i> Thống kê
+                </div>
+                <div class="stats-small">
+                    <div class="stat-small">
+                        <div class="stat-number-small">{{ book.views }}</div>
+                        <div class="stat-label-small"><i class="fas fa-eye"></i> Lượt xem</div>
+                    </div>
+                    <div class="stat-small">
+                        <div class="stat-number-small">{{ book.downloads }}</div>
+                        <div class="stat-label-small"><i class="fas fa-download"></i> Tải về</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="sidebar-card">
+                <div class="action-buttons-small">
+                    {% if session.user_email %}
+                        {% if book.pdf_file %}
+                        <button class="btn-small primary" onclick="downloadBook({{ book.id }})">
+                            <i class="fas fa-download"></i> Tải về PDF
+                        </button>
+                        {% endif %}
+                        <button class="btn-small secondary" onclick="goBack()">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </button>
+                        <a href="{{ url_for('book_detail', book_id=book.id) }}" class="btn-small secondary">
+                            <i class="fas fa-info-circle"></i> Chi tiết sách
+                        </a>
+                    {% else %}
+                        <p style="color: #e74c3c; text-align: center; font-weight: 600;">
+                            <i class="fas fa-lock"></i><br>
+                            Bạn chưa đăng nhập
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="reader-footer">
+        <p>&copy; 2024 Shin.vltl - Bảo lưu mọi quyền</p>
+    </footer>
+
+    <script>
+        // PDF.js setup
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const viewport = page.getViewport({ scale: scale });
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                    document.getElementById('pdf-container').innerHTML = '';
+                    document.getElementById('pdf-container').appendChild(canvas);
+                    document.getElementById('page-num').value = num;
+                    updatePageButtons();
+                });
+            });
+        }
+
+        function queuePage(num) {
+            if (num >= 1 && num <= pdfDoc.numPages) {
+                pageNum = num;
+                if (!pageRendering) {
+                    renderPage(num);
+                } else {
+                    pageNumPending = num;
+                }
+            }
+        }
+
+        function previousPage() {
+            if (pageNum > 1) queuePage(pageNum - 1);
+        }
+
+        function nextPage() {
+            if (pageNum < pdfDoc.numPages) queuePage(pageNum + 1);
+        }
+
+        function zoomIn() {
+            if (scale < 3) {
+                scale += 0.25;
+                updateScaleDisplay();
+                renderPage(pageNum);
+            }
+        }
+
+        function zoomOut() {
+            if (scale > 0.5) {
+                scale -= 0.25;
+                updateScaleDisplay();
+                renderPage(pageNum);
+            }
+        }
+
+        function updateScaleDisplay() {
+            const scalePercent = Math.round(scale * 100);
+            document.getElementById('scaleDisplay').textContent = scalePercent + '%';
+        }
+
+        function updatePageButtons() {
+            document.getElementById('prevBtn').disabled = pageNum <= 1;
+            document.getElementById('nextBtn').disabled = pageNum >= pdfDoc.numPages;
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function downloadBook(bookId) {
+            window.location.href = `/download/${bookId}`;
+        }
+
+        // Get PDF URL
+        function getPdfUrl() {
+            const pdfFile = "{{ book.pdf_file }}";
+            
+            // Nếu là link URL
+            if (pdfFile.startsWith('http')) {
+                return pdfFile;
+            }
+            
+            // Nếu là file local
+            if (pdfFile && !pdfFile.startsWith('http')) {
+                return `/pdf/${pdfFile.split('/').pop()}`;
+            }
+            
+            return null;
+        }
+
+        // Load PDF
+        function loadPDF() {
+            const url = getPdfUrl();
+            
+            if (!url) {
+                console.log('Không có PDF');
+                document.getElementById('pdf-container').innerHTML = `
+                    <div class="no-pdf-message">
+                        <i class="fas fa-file-pdf"></i>
+                        <p>Chưa có file PDF</p>
+                    </div>
+                `;
+                return;
+            }
+
+            pdfjsLib.getDocument({
+                url: url,
+                withCredentials: false
+            }).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                document.getElementById('total-pages').textContent = pdf.numPages;
+                document.getElementById('page-num').max = pdf.numPages;
+                renderPage(pageNum);
+                updatePageButtons();
+            }).catch(function(error) {
+                console.error('Lỗi khi tải PDF:', error);
+                document.getElementById('pdf-container').innerHTML = `
+                    <div class="no-pdf-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Không thể tải PDF</p>
+                        <small>Vui lòng thử lại sau</small>
+                    </div>
+                `;
+            });
+        }
+
+        // Event listeners
+        document.getElementById('page-num').addEventListener('change', function() {
+            const pageNum = parseInt(this.value) || 1;
+            if (pdfDoc) {
+                queuePage(pageNum);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') previousPage();
+            if (e.key === 'ArrowRight') nextPage();
+            if (e.key === '+' || e.key === '=') zoomIn();
+            if (e.key === '-') zoomOut();
+        });
+
+        // Load PDF on page ready
+        window.addEventListener('load', loadPDF);
+    </script>
+</body>
+</html>

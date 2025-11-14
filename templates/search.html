@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả tìm kiếm - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <h1>Shin.vltl</h1>
+                        <p>Hệ thống thư viện điện tử<br>Trường Tiểu học Lê Văn Tám</p>
+                    </div>
+                </div>
+                <div class="search-bar">
+                    <form>
+                        <select class="category-select">
+                            <option>Tất cả</option>
+                            {% for cat in categories %}
+                            <option>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" class="search-input" placeholder="Bạn muốn tìm gì?" value="{{ search_query }}">
+                        <button type="submit" class="search-btn">Tìm kiếm</button>
+                    </form>
+                </div>
+                {% if session.user_card_id %}
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: white;">👋 {{ session.user_name }}</span>
+                    <a href="/profile" style="color: white; text-decoration: none; padding: 10px 15px; background: rgba(255,255,255,0.2); border-radius: 25px;">
+                        <i class="fas fa-user-circle"></i> Hồ sơ
+                    </a>
+                    <a href="/logout" style="color: white; text-decoration: none; padding: 10px 15px; background: #e74c3c; border-radius: 25px;">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </a>
+                </div>
+                {% else %}
+                <a href="/login" class="btn-login"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="/"><i class="fas fa-home"></i> TRANG CHỦ</a></li>
+                <li><a href="/favorites"><i class="fas fa-heart"></i> YÊU THÍCH</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3 class="sidebar-title">Lọc</h3>
+            <ul class="sidebar-menu">
+                <li><a href="/"><i class="fas fa-arrow-left"></i> Quay lại</a></li>
+            </ul>
+            
+            <div class="categories-section">
+                <h4>Thể loại</h4>
+                <div class="category-tags">
+                    {% for cat in categories %}
+                    <a href="/search?q={{ search_query }}&category={{ cat }}" style="text-decoration: none;">
+                        <span>{{ cat }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div style="margin-bottom: 30px;">
+                <h1 style="color: #2c3e50;">
+                    <i class="fas fa-search"></i> Kết quả tìm kiếm
+                </h1>
+                <p style="color: #7f8c8d;">
+                    Tìm kiếm: <strong>{{ search_query }}</strong> 
+                    <span style="color: #2c7873; margin-left: 15px;">Tìm thấy {{ search_results|length }} kết quả</span>
+                </p>
+            </div>
+
+            {% if search_results|length > 0 %}
+            <div class="books-grid">
+                {% for book in search_results %}
+                <div class="book-card">
+                    <div class="book-cover">
+                        <img src="{{ url_for('static', filename='images/' + (book.cover|cover)) }}" 
+                            alt="{{ book.title }}"
+                            loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% if session.user_card_id %}
+                        <button class="favorite-btn" onclick="toggleFavorite({{ book.id }})">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <h3>{{ book.title }}</h3>
+                    <p class="book-category">{{ book.author }}</p>
+                    <div style="margin-top: 10px; font-size: 12px; color: #7f8c8d;">
+                        <p><i class="fas fa-copy"></i> {{ book.available_copies }}/{{ book.total_copies }} cuốn</p>
+                    </div>
+                    <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                       style="display: inline-block; margin-top: 10px; color: #3498db; text-decoration: none; font-weight: 600;">
+                        Xem chi tiết <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 50px;">
+                <i class="fas fa-search" style="font-size: 60px; color: #bdc3c7;"></i>
+                <p style="color: #7f8c8d; margin-top: 15px;">Không tìm thấy sách nào phù hợp với tìm kiếm của bạn</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Shin.vltl - Bảo lưu mọi quyền</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

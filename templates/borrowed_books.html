@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sách Đã Mượn - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .borrow-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #FF69B4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .borrow-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .borrow-info h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        .borrow-info p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        .borrow-dates {
+            display: flex;
+            gap: 30px;
+            margin-top: 10px;
+        }
+        .borrow-dates span {
+            font-size: 12px;
+        }
+        .borrow-dates .label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+        .status-badge.overdue {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+        .return-btn {
+            background: #FF69B4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .return-btn:hover {
+            background: #FF1493;
+        }
+        .empty-borrowed {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <p style="margin: 0; font-size: 12px; font-weight: 500; opacity: 0.95;">Hệ thống thư viện điện tử</p>
+                        <h1 style="margin: 2px 0 0 0;">Shin.vltl</h1>
+                    </div>
+                </div>
+                {% if session.user_email %}
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: white; font-size: 13px;">👋 {{ session.user_name }}</span>
+                    <a href="/profile" style="color: white; text-decoration: none;">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                    <a href="/logout" style="color: white; text-decoration: none; background: #e74c3c; padding: 8px 12px; border-radius: 20px;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="/"><i class="fas fa-home"></i> TRANG CHỦ</a></li>
+                <li><a href="/borrowed-books" class="active"><i class="fas fa-book-open"></i> SÁCH ĐÃ MƯỢN</a></li>
+                <li><a href="/favorites"><i class="fas fa-heart"></i> YÊU THÍCH</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="padding: 30px 0;">
+        <h1 style="color: #2c3e50; margin-bottom: 30px;">
+            <i class="fas fa-book-open"></i> Sách Đã Mượn
+        </h1>
+
+        {% if borrowed_books|length > 0 %}
+            <div style="background: #fff3f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <i class="fas fa-info-circle"></i>
+                Bạn đang mượn <strong>{{ borrowed_books|length }}</strong> cuốn sách
+            </div>
+
+            {% for book in borrowed_books %}
+            <div class="borrow-card">
+                <div class="borrow-info">
+                    <h3>{{ book.title }}</h3>
+                    <div class="borrow-dates">
+                        <div>
+                            <span class="label">📅 Ngày mượn:</span>
+                            <span>{{ book.borrow_date }}</span>
+                        </div>
+                        <div>
+                            <span class="label">⏰ Hạn trả:</span>
+                            <span>{{ book.due_date }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span class="status-badge">{{ book.status }}</span>
+                    <!-- <button class="return-btn" onclick="returnBook({{ book.book_id }})">
+                        <i class="fas fa-undo"></i> Trả sách
+                    </button> -->
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-borrowed">
+                <i class="fas fa-inbox" style="font-size: 64px; opacity: 0.2; display: block; margin-bottom: 20px;"></i>
+                <h3>Bạn chưa mượn cuốn sách nào</h3>
+                <p>Hãy khám phá thư viện và mượn những cuốn sách yêu thích</p>
+                <a href="/" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #FF69B4; color: white; text-decoration: none; border-radius: 6px;">
+                    ← Quay lại trang chủ
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function returnBook(bookId) {
+            if (confirm('Bạn chắc chắn muốn trả sách này?')) {
+                // Gửi request return sách
+                alert('Sách đã được trả. Cảm ơn bạn!');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư viện điện tử - Shin.vltl</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,50 Q300,0 600,50 T1200,50 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/></svg>') repeat-x;
+            animation: wave 15s linear infinite;
+        }
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(1200px); }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+        }
+        .hero-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+        .hero-title .highlight {
+            color: #ffd700;
+            font-style: italic;
+        }
+        .hero-subtitle {
+            font-size: 18px;
+            opacity: 0.95;
+            margin: 0;
+        }
+        .hero-icons {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 100px;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        /* Category Dropdown */
+        .category-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .category-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .category-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        .category-dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 250px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border-radius: 8px;
+            overflow: hidden;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+        }
+        .category-dropdown:hover .category-dropdown-content {
+            display: block;
+        }
+        .category-item {
+            padding: 12px 18px;
+            color: #2c3e50;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            border-bottom: 1px solid #ecf0f1;
+            transition: all 0.3s;
+        }
+        .category-item:last-child {
+            border-bottom: none;
+        }
+        .category-item:hover {
+            background: #f0f4f8;
+            color: #667eea;
+            padding-left: 24px;
+        }
+        .category-submenu {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            top: 0;
+            left: 100%;
+            margin-left: 8px;
+        }
+        .category-item:hover .category-submenu {
+            display: block;
+        }
+        .subcategory-item {
+            padding: 10px 15px;
+            color: #34495e;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #ecf0f1;
+            transition: all 0.3s;
+            display: block;
+        }
+        .subcategory-item:last-child {
+            border-bottom: none;
+        }
+        .subcategory-item:hover {
+            background: #f0f4f8;
+            color: #667eea;
+            padding-left: 18px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <p style="margin: 0; font-size: 12px; font-weight: 500; opacity: 0.95;">Hệ thống thư viện điện tử</p>
+                        <h1 style="margin: 2px 0 0 0;">Shin.vltl</h1>
+                        <p style="margin: 0; font-size: 12px; font-weight: 500; opacity: 0.95;">Trường Tiểu học Lê Văn Tám</p>
+                    </div>
+                </div>
+                <div class="search-bar">
+                    <form>
+                        <input type="text" class="search-input" placeholder="Bạn muốn tìm gì?">
+                        <button type="submit" class="search-btn">Tìm kiếm</button>
+                    </form>
+                </div>
+                {% if session.user_email %}
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: white; font-size: 13px;">👋 {{ session.user_name }}</span>
+                    <a href="/profile" style="color: white; text-decoration: none; padding: 8px 12px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 13px;">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                    <a href="/logout" style="color: white; text-decoration: none; padding: 8px 12px; background: #e74c3c; border-radius: 20px; font-size: 13px;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+                {% else %}
+                <a href="/login" class="btn-login"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="/" class="active"><i class="fas fa-home"></i> TRANG CHỦ</a></li>
+                <li><a href="#"><i class="fas fa-info-circle"></i> GIỚI THIỆU</a></li>
+                <li><a href="#"><i class="fas fa-book-open"></i> TRA CỨU OPAC</a></li>
+                <li><a href="#"><i class="fas fa-newspaper"></i> TIN TỨC</a></li>
+                <li><a href="#"><i class="fas fa-question-circle"></i> HƯỚNG DẪN SỬ DỤNG</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Banner with Categories -->
+    <section class="hero-banner">
+        <div class="hero-icons">
+            <i class="fas fa-book-open"></i>
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Khám phá <span class="highlight">Thư viện điện tử</span></h1>
+                <p class="hero-subtitle">Truy cập hàng ngàn cuốn sách chất lượng cao</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Navigation -->
+    <div style="background: white; padding: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div class="container">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #2c3e50; font-size: 14px;">Danh mục:</span>
+                
+                <!-- Category Dropdowns -->
+                {% for category, subcategories in categories.items() %}
+                <div class="category-dropdown">
+                    <button class="category-btn">
+                        <i class="fas fa-folder-open"></i> {{ category }}
+                        <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    </button>
+                    <div class="category-dropdown-content">
+                        {% for subcategory in subcategories %}
+                        <a href="/category/{{ category }}/{{ subcategory }}" class="category-item">
+                            <i class="fas fa-book"></i>
+                            {{ subcategory }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3 class="sidebar-title">Sắp xếp</h3>
+            <ul class="sidebar-menu">
+                <li><a href="/?sort=new"><i class="fas fa-star"></i> Sách mới nhất</a></li>
+                <li><a href="/?sort=popular"><i class="fas fa-fire"></i> Sách hot</a></li>
+                <li><a href="/?sort=views"><i class="fas fa-eye"></i> Sách xem nhiều</a></li>
+                <li><a href="/?sort=downloads"><i class="fas fa-download"></i> Sách tải nhiều</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Books Section - New -->
+            <section class="books-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-book"></i> Sách mới cập nhật</h2>
+                    <a href="/?sort=new" class="view-more">Xem thêm <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="books-grid">
+                    {% for book in books_new %}
+                    <div class="book-card">
+                        <div class="book-cover">
+                            <img src="{{ url_for('static', filename='images/' + (book.cover|cover)) }}" 
+                                alt="{{ book.title }}" 
+                                loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% if session.user_card_id %}
+                            <button class="favorite-btn" onclick="toggleFavorite({{ book.id }})">
+                                <i class="far fa-heart"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <h3>{{ book.title }}</h3>
+                        <p class="book-category">{{ book.category }}</p>
+                        <div style="margin-top: 10px; font-size: 12px; color: #7f8c8d;">
+                            <p><i class="fas fa-eye"></i> {{ book.views }} lượt xem</p>
+                        </div>
+                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                           style="display: inline-block; margin-top: 10px; color: #3498db; text-decoration: none; font-weight: 600;">
+                            Xem chi tiết <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Books Section - Popular -->
+            <section class="books-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-star"></i> Sách được yêu thích</h2>
+                    <a href="/?sort=popular" class="view-more">Xem thêm <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="books-grid">
+                    {% for book in books_popular %}
+                    <div class="book-card">
+                        <div class="book-cover">
+                            <img src="{{ url_for('static', filename='images/' + (book.cover|cover)) }}" 
+                                alt="{{ book.title }}" 
+                                loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% if session.user_card_id %}
+                            <button class="favorite-btn" onclick="toggleFavorite({{ book.id }})">
+                                <i class="far fa-heart"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <h3>{{ book.title }}</h3>
+                        <p class="book-category">{{ book.category }}</p>
+                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                           style="display: inline-block; margin-top: 10px; color: #3498db; text-decoration: none; font-weight: 600;">
+                            Xem chi tiết <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Books Section - Hot -->
+            <section class="books-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> Sách hot nhất</h2>
+                    <a href="/?sort=hot" class="view-more">Xem thêm <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="books-grid">
+                    {% for book in books_hot %}
+                    <div class="book-card">
+                        <div class="book-cover">
+                            <img src="{{ url_for('static', filename='images/' + (book.cover|cover)) }}" 
+                                alt="{{ book.title }}"
+                                loading="lazy"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% if session.user_card_id %}
+                            <button class="favorite-btn" onclick="toggleFavorite({{ book.id }})">
+                                <i class="far fa-heart"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <h3>{{ book.title }}</h3>
+                        <p style="color: #7f8c8d; font-size: 12px;">
+                            <i class="fas fa-user"></i> {{ book.author }}
+                        </p>
+                        <a href="{{ url_for('book_detail', book_id=book.id) }}" 
+                        style="display: inline-block; margin-top: 10px; color: #FF69B4; text-decoration: none; font-weight: 600;">
+                            Xem chi tiết <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-book"></i> Shin.vltl</h3>
+                    <p>Hệ thống thư viện điện tử<br>Trường Tiểu học Lê Văn Tám</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên kết nhanh</h4>
+                    <p><i class="fas fa-link"></i> <a href="/" style="color: var(--white); text-decoration: none;">Trang chủ</a></p>
+                    <p><i class="fas fa-link"></i> <a href="#" style="color: var(--white); text-decoration: none;">Giới thiệu</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <p><i class="fas fa-phone"></i> 0123 456 789</p>
+                    <p><i class="fas fa-envelope"></i> info@f5lib.edu.vn</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Shin.vltl - Hệ thống thư viện điện tử Trường Tiểu học Lê Văn Tám</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
