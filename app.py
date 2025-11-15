@@ -62,7 +62,7 @@ def load_users_from_supabase():
     try:
         from static.py.database import db
         
-        users_list = db.get_all_users_list()
+        users_list = db().get_all_users_list()
         normalized_users = {}
         
         for user in users_list:
@@ -152,7 +152,7 @@ def load_books_from_supabase():
     try:
         from static.py.database import db
         
-        books_list = db.get_all_books_list()
+        books_list = db().get_all_books_list()
         normalized_books = []
         
         for book in books_list:
