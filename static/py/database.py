@@ -1,7 +1,7 @@
 from supabase import create_client, Client
 import json
 
-class DatabaseHandler:
+class db:
     def __init__(self):
         self.SUPABASE_URL = "https://nnedehvvazuyxtrghjrd.supabase.co"
         self.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZWRlaHZ2YXp1eXh0cmdoanJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDM0NzMsImV4cCI6MjA3ODcxOTQ3M30.cxmCbeHmAOFOhe-Cwh6gaXWRyEIeFCHl2qwtZBvghLQ"
