@@ -4,6 +4,9 @@ import os
 from werkzeug.utils import secure_filename
 from functools import wraps, lru_cache
 from urllib.parse import unquote
+
+
+from static.py.database import db
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
 DEFAULT_BOOK_COVER = 'fs_book_cover-5f4eddfb.png'
@@ -13,39 +16,97 @@ UPLOAD_FOLDER = r'C:\Users\pc\Desktop\shin\webdocsach\data'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ============ DATABASE ============
+def normalize_user(user_data):
+    """Chuyển đổi dữ liệu user từ Supabase thành format chuẩn"""
+    try:
+        # Parse favorite_books nếu là string
+        favorite_books = user_data.get('favorite_books', [])
+        if isinstance(favorite_books, str):
+            if favorite_books.strip() == '[]' or favorite_books.strip() == '':
+                favorite_books = []
+            else:
+                import json
+                favorite_books = json.loads(favorite_books)
+        
+        # Parse borrowed_books
+        borrowed_books = user_data.get('borrowed_books', [])
+        if isinstance(borrowed_books, str):
+            import json
+            borrowed_books = json.loads(borrowed_books) if borrowed_books.strip() else []
+        
+        return {
+            'password': user_data.get('password', 'password123'),
+            'name': user_data.get('name', ''),
+            'email': user_data.get('email', ''),
+            'phone': user_data.get('phone', ''),
+            'borrowed_books': borrowed_books if isinstance(borrowed_books, list) else [],
+            'favorite_books': favorite_books if isinstance(favorite_books, list) else [],
+            'borrow_limit': user_data.get('borrow_limit', 5)
+        }
+    except Exception as e:
+        print(f"❌ Lỗi normalize user: {str(e)}")
+        return {
+            'password': 'password123',
+            'name': user_data.get('name', ''),
+            'email': user_data.get('email', ''),
+            'phone': user_data.get('phone', ''),
+            'borrowed_books': [],
+            'favorite_books': [],
+            'borrow_limit': 5
+        }
+
+# ============ LOAD USERS FROM SUPABASE ============
+
+def load_users_from_supabase():
+    """Load users từ Supabase và normalize"""
+    try:
+        from static.py.database import db
+        
+        users_list = db.get_all_users_list()
+        normalized_users = {}
+        
+        for user in users_list:
+            card_id = user.get('card_id')
+            if card_id:
+                normalized_users[card_id] = normalize_user(user)
+        
+        print(f"✅ Loaded {len(normalized_users)} users từ Supabase")
+        return normalized_users
+    except Exception as e:
+        print(f"❌ Lỗi load users: {str(e)}")
+        return {}
+
+# ============ DATABASE ============
+
 ADMIN_CREDENTIALS = {
-    'admin': 'admin',  # Thay đổi mật khẩu này!
+    'admin': 'admin',
     'admin2': 'shinsad'
 }
-users_db = {
-    'TV001': {
-        'password': 'password123',
-        'name': 'Nguyễn Văn A',
-        'email': 'user1@example.com',
-        'phone': '0123456789',
-        'borrowed_books': [
-            {
-                'book_id': 1,
-                'title': 'Cậu bé đứng trên lưng chó',
-                'borrow_date': '2024-11-14',
-                'due_date': '2024-11-28',
-                'status': 'đang mượn'
-            }
-        ],
-        'favorite_books': [1, 2],
-        'borrow_limit': 5
-    },
-    'TV002': {
-        'password': 'password456',
-        'name': 'Trần Thị B',
-        'email': 'user2@example.com',
-        'phone': '0987654321',
-        'borrowed_books': [],
-        'favorite_books': [],
-        'borrow_limit': 5
-    }
-}
 
+# Load users từ Supabase (hoặc dùng fallback)
+users_db = load_users_from_supabase()
+if not users_db:
+    print("⚠️ Không load được users từ Supabase, dùng fallback data")
+    users_db = {
+        'TV001': {
+            'password': 'password123',
+            'name': 'Nguyễn Văn A',
+            'email': 'user1@example.com',
+            'phone': '0123456789',
+            'borrowed_books': [],
+            'favorite_books': [],
+            'borrow_limit': 5
+        },
+        'TV002': {
+            'password': 'password456',
+            'name': 'Trần Thị B',
+            'email': 'user2@example.com',
+            'phone': '0987654321',
+            'borrowed_books': [],
+            'favorite_books': [],
+            'borrow_limit': 5
+        }
+    }
 # ============ CATEGORIES ============
 CATEGORIES = {
     "Sách giáo khóa": ["Lớp 1", "Lớp 2", "Lớp 3", "Lớp 4", "Lớp 5"],
@@ -56,359 +117,122 @@ CATEGORIES = {
 }
 
 # ============ BOOKS DATA ============
-books_new = [
-    {
-        "id": 1, 
-        "title": "Cậu bé đứng trên lưng chó",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Truyện đọc",
-        "author": "Tô Hoài",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2021",
-        "pages": "120",
-        "description": "Câu chuyện cổ tích lôi cuốn về chàng trai và con chó thần kỳ.",
-        "cover": "TVcanhdieu1.jpg",
-        "pdf_file": "https://2e9gpvwy1fi1gblk.public.blob.vercel-storage.com/C%E1%BA%ADu%20b%C3%A9%20%C4%91%E1%BB%A9ng%20tr%C3%AAn%20l%C6%B0ng%20ch%C3%B3.pdf",
-        "views": 1250,
-        "downloads": 85,
-        "rating": 4.5,
-        "available_copies": 3,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    {
-        "id": 2, 
-        "title": "Sự tích Hạ Long",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Sách giáo viên",
-        "author": "Dân gian",
-        "publisher": "NXB Thanh Niên",
-        "year": "2020",
-        "pages": "100",
-        "description": "Truyện cổ tích nổi tiếng về Hạ Long Bay.",
-        "cover": "book2.jpg",
-        "pdf_file": "textbook/book2.pdf",
-        "views": 850,
-        "downloads": 45,
-        "rating": 4.2,
-        "available_copies": 2,
-        "total_copies": 4,
-        "borrowers": []
-    },
-    {
-        "id": 3, 
-        "title": "Tấm Cám",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Sách giáo khóa",
-        "author": "Dân gian",
-        "publisher": "NXB Thanh Niên",
-        "year": "2020",
-        "pages": "95",
-        "description": "Truyện cổ tích Tấm Cám - câu chuyện về lòng tốt và công lý.",
-        "cover": "book3.jpg",
-        "pdf_file": "textbook/book3.pdf",
-        "views": 920,
-        "downloads": 56,
-        "rating": 4.3,
-        "available_copies": 4,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    {
-        "id": 4, 
-        "title": "Thạch Sanh - Lê Phương",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Truyện đọc",
-        "author": "Dân gian",
-        "publisher": "NXB Thanh Niên",
-        "year": "2020",
-        "pages": "110",
-        "description": "Chuyện tình lãng mạn của Thạch Sanh và Lê Phương.",
-        "cover": "book4.jpg",
-        "pdf_file": "textbook/book4.pdf",
-        "views": 740,
-        "downloads": 38,
-        "rating": 4.1,
-        "available_copies": 5,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    {
-        "id": 5, 
-        "title": "Truyện Kiều",
-        "category": "Sách tham khảo",
-        "subcategory": "Tiếng Việt",
-        "book_type": "Sách giáo khóa",
-        "author": "Nguyễn Du",
-        "publisher": "NXB Văn học",
-        "year": "2019",
-        "pages": "200",
-        "description": "Bộ truyện Kiều nổi tiếng nhất của Nguyễn Du.",
-        "cover": "book5.jpg",
-        "pdf_file": "textbook/book5.pdf",
-        "views": 1100,
-        "downloads": 72,
-        "rating": 4.4,
-        "available_copies": 3,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    {
-        "id": 6, 
-        "title": "Kỳ tích hai mươi năm",
-        "category": "Truyện",
-        "subcategory": "Truyện hiện đại",
-        "book_type": "Truyện đọc",
-        "author": "Jules Verne",
-        "publisher": "NXB Trẻ",
-        "year": "2021",
-        "pages": "250",
-        "description": "Cuộc phiêu lưu tứ tế vòng quanh thế giới.",
-        "cover": "book6.jpg",
-        "pdf_file": "textbook/book6.pdf",
-        "views": 980,
-        "downloads": 61,
-        "rating": 4.2,
-        "available_copies": 2,
-        "total_copies": 4,
-        "borrowers": []
-    },
-    {
-        "id": 7, 
-        "title": "Toán lớp 1",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 1",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "150",
-        "description": "Sách giáo khóa toán lớp 1 theo chương trình mới.",
-        "cover": "book7.jpg",
-        "pdf_file": "textbook/book7.pdf",
-        "views": 650,
-        "downloads": 42,
-        "rating": 4.0,
-        "available_copies": 5,
-        "total_copies": 8,
-        "borrowers": []
-    },
-    {
-        "id": 1, 
-        "title": "Cậu bé đứng trên lưng chó",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Truyện đọc",
-        "author": "Tô Hoài",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2021",
-        "pages": "120",
-        "description": "Câu chuyện cổ tích lôi cuốn về chàng trai và con chó thần kỳ.",
-        "cover": "book1.jpg",
-        "pdf_file": "textbook/book1.pdf",
-        "views": 1250,
-        "downloads": 85,
-        "rating": 4.5,
-        "available_copies": 3,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    
-    # ===== SÁCH GIÁO KHÓA LỚP 1 =====
-    {
-        "id": 7, 
-        "title": "Toán Kết Nối Tri Thức Lớp 1",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 1",
-        "subject": "Toán",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "150",
-        "description": "Sách giáo khóa toán lớp 1 theo chương trình Kết Nối Tri Thức.",
-        "cover": "book7.jpg",
-        "pdf_file": "textbook/toan_l1.pdf",
-        "views": 650,
-        "downloads": 42,
-        "rating": 4.0,
-        "available_copies": 5,
-        "total_copies": 8,
-        "borrowers": []
-    },
-    {
-        "id": 8, 
-        "title": "Tiếng Việt Kết Nối Tri Thức Lớp 1",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 1",
-        "subject": "Tiếng Việt",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "160",
-        "description": "Sách giáo khóa tiếng Việt lớp 1 theo chương trình Kết Nối Tri Thức.",
-        "cover": "book8.jpg",
-        "pdf_file": "textbook/tiengviet_l1.pdf",
-        "views": 580,
-        "downloads": 38,
-        "rating": 4.1,
-        "available_copies": 4,
-        "total_copies": 7,
-        "borrowers": []
-    },
-    {
-        "id": 9, 
-        "title": "Tự Nhiên Xã Hội Lớp 1",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 1",
-        "subject": "Tự Nhiên Xã Hội",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "140",
-        "description": "Sách giáo khóa tự nhiên xã hội lớp 1.",
-        "cover": "book9.jpg",
-        "pdf_file": "textbook/tnxh_l1.pdf",
-        "views": 420,
-        "downloads": 25,
-        "rating": 3.9,
-        "available_copies": 6,
-        "total_copies": 8,
-        "borrowers": []
-    },
-    
-    # ===== SÁCH GIÁO KHÓA LỚP 2 =====
-    {
-        "id": 10, 
-        "title": "Toán Kết Nối Tri Thức Lớp 2",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 2",
-        "subject": "Toán",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "170",
-        "description": "Sách giáo khóa toán lớp 2 theo chương trình Kết Nối Tri Thức.",
-        "cover": "book10.jpg",
-        "pdf_file": "textbook/toan_l2.pdf",
-        "views": 720,
-        "downloads": 50,
-        "rating": 4.2,
-        "available_copies": 5,
-        "total_copies": 8,
-        "borrowers": []
-    },
-    {
-        "id": 11, 
-        "title": "Tiếng Việt Kết Nối Tri Thức Lớp 2",
-        "category": "Sách giáo khóa",
-        "subcategory": "Lớp 2",
-        "subject": "Tiếng Việt",
-        "book_type": "Sách giáo khóa",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "180",
-        "description": "Sách giáo khóa tiếng Việt lớp 2.",
-        "cover": "book11.jpg",
-        "pdf_file": "textbook/tiengviet_l2.pdf",
-        "views": 650,
-        "downloads": 45,
-        "rating": 4.0,
-        "available_copies": 4,
-        "total_copies": 7,
-        "borrowers": []
-    },
-    
-    # ===== SÁCH GIÁO VIÊN LỚP 1 =====
-    {
-        "id": 20, 
-        "title": "Hướng Dẫn Giảng Dạy Toán Lớp 1",
-        "category": "Sách giáo viên",
-        "subcategory": "Lớp 1",
-        "subject": "Toán",
-        "book_type": "Sách giáo viên",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "200",
-        "description": "Sách hướng dẫn giảng dạy toán lớp 1 cho giáo viên.",
-        "cover": "book20.jpg",
-        "pdf_file": "textbook/huongdan_toan_l1.pdf",
-        "views": 320,
-        "downloads": 18,
-        "rating": 4.3,
-        "available_copies": 3,
-        "total_copies": 5,
-        "borrowers": []
-    },
-    {
-        "id": 21, 
-        "title": "Hướng Dẫn Giảng Dạy Tiếng Việt Lớp 1",
-        "category": "Sách giáo viên",
-        "subcategory": "Lớp 1",
-        "subject": "Tiếng Việt",
-        "book_type": "Sách giáo viên",
-        "author": "Bộ Giáo Dục",
-        "publisher": "NXB Giáo Dục Việt Nam",
-        "year": "2024",
-        "pages": "210",
-        "description": "Sách hướng dẫn giảng dạy tiếng Việt lớp 1 cho giáo viên.",
-        "cover": "book21.jpg",
-        "pdf_file": "textbook/huongdan_tiengviet_l1.pdf",
-        "views": 280,
-        "downloads": 15,
-        "rating": 4.2,
-        "available_copies": 2,
-        "total_copies": 4,
-        "borrowers": []
-    },
-    
-    # ===== TRUYỆN =====
-    {
-        "id": 2, 
-        "title": "Sự tích Hạ Long",
-        "category": "Truyện",
-        "subcategory": "Truyện cổ tích",
-        "book_type": "Truyện",
-        "author": "Dân gian",
-        "publisher": "NXB Thanh Niên",
-        "year": "2020",
-        "pages": "100",
-        "description": "Truyện cổ tích nổi tiếng về Hạ Long Bay.",
-        "cover": "book2.jpg",
-        "pdf_file": "textbook/book2.pdf",
-        "views": 850,
-        "downloads": 45,
-        "rating": 4.2,
-        "available_copies": 2,
-        "total_copies": 4,
-        "borrowers": []
-    },
-]
+# books_new = data_base().get_book()
 
+def normalize_book(book_data):
+    """Chuyển đổi dữ liệu sách từ Supabase thành format chuẩn"""
+    try:
+        return {
+            'id': book_data.get('id'),
+            'title': book_data.get('title', 'N/A'),
+            'author': book_data.get('author', ''),
+            'category': book_data.get('category', ''),
+            'subcategory': book_data.get('subcategory', ''),
+            'subject': book_data.get('subject', ''),
+            'book_type': book_data.get('book_type', ''),
+            'publisher': book_data.get('publisher', ''),
+            'year': book_data.get('year', ''),
+            'pages': book_data.get('pages', ''),
+            'description': book_data.get('description', ''),
+            'cover': book_data.get('cover', DEFAULT_BOOK_COVER),
+            'pdf_file': book_data.get('pdf_file', ''),
+            'views': int(book_data.get('views', 0)) if book_data.get('views') is not None else 0,
+            'downloads': int(book_data.get('downloads', 0)) if book_data.get('downloads') is not None else 0,
+            'rating': float(book_data.get('rating', 0)) if book_data.get('rating') is not None else 0,
+            'available_copies': int(book_data.get('available_copies', 1)) if book_data.get('available_copies') is not None else 1,
+            'total_copies': int(book_data.get('total_copies', 1)) if book_data.get('total_copies') is not None else 1,
+            'borrowers': book_data.get('borrowers', []) if book_data.get('borrowers') is not None else []
+        }
+    except Exception as e:
+        print(f"❌ Lỗi normalize book: {str(e)}")
+        return None
+
+def load_books_from_supabase():
+    """Load books từ Supabase và normalize"""
+    try:
+        from static.py.database import db
+        
+        books_list = db.get_all_books_list()
+        normalized_books = []
+        
+        for book in books_list:
+            normalized = normalize_book(book)
+            if normalized:
+                normalized_books.append(normalized)
+        
+        print(f"✅ Loaded {len(normalized_books)} books từ Supabase")
+        return normalized_books
+    except Exception as e:
+        print(f"❌ Lỗi load books: {str(e)}")
+        return []
+books_new = load_books_from_supabase()
+
+if not books_new:
+    print("⚠️ Không load được books từ Supabase, dùng fallback data")
+    books_new = [
+        {
+            "id": 1, 
+            "title": "Cậu bé đứng trên lưng chó",
+            "category": "Truyện",
+            "subcategory": "Truyện cổ tích",
+            "book_type": "Truyện đọc",
+            "author": "Tô Hoài",
+            "publisher": "NXB Giáo Dục Việt Nam",
+            "year": "2021",
+            "pages": "120",
+            "description": "Câu chuyện cổ tích lôi cuốn về chàng trai và con chó thần kỳ.",
+            "cover": "TVcanhdieu1.jpg",
+            "pdf_file": "https://dfvy4lc0t9aewcnl.public.blob.vercel-storage.com/books/tiengviet1-YIPU8Qcx072qRuo0j0xlMHDOuA0gLo.pdf",
+            "views": 1250,
+            "downloads": 85,
+            "rating": 4.5,
+            "available_copies": 3,
+            "total_copies": 5,
+            "borrowers": []
+        }
+    ]
 books_popular = books_new[:3]
 books_hot = sorted(books_new, key=lambda x: x['views'], reverse=True)[:6]
 # ============ UTILITY FUNCTIONS ============
+
+
+# ============ BOOKS DATA ============
+
+def get_safe(obj, key, default=0, type_convert=int):
+    """Lấy giá trị an toàn từ dict"""
+    try:
+        value = obj.get(key, default)
+        if value is None:
+            return default
+        return type_convert(value)
+    except (ValueError, TypeError):
+        return default
+
 def get_all_books():
-    return books_new
+    """Lấy tất cả books (safe)"""
+    return books_new if books_new else []
 
 def get_book_by_id(book_id):
-    all_books = get_all_books()
-    return next((b for b in all_books if b['id'] == book_id), None)
+    """Lấy sách theo ID (safe)"""
+    try:
+        all_books = get_all_books()
+        return next((b for b in all_books if b.get('id') == book_id), None)
+    except Exception as e:
+        print(f"⚠️ Error get_book_by_id: {str(e)}")
+        return None
 
 def get_books_by_category(main_category, subcategory=None):
-    all_books = get_all_books()
-    if subcategory:
-        return [b for b in all_books if b['category'] == main_category and b['subcategory'] == subcategory]
-    return [b for b in all_books if b['category'] == main_category]
+    """Lấy sách theo danh mục (safe)"""
+    try:
+        all_books = get_all_books()
+        if subcategory:
+            return [b for b in all_books 
+                   if b.get('category') == main_category 
+                   and b.get('subcategory') == subcategory]
+        return [b for b in all_books if b.get('category') == main_category]
+    except Exception as e:
+        print(f"⚠️ Error get_books_by_category: {str(e)}")
+        return []
 @lru_cache(maxsize=256)
 def image_exists(filename):
     """Kiểm tra ảnh có tồn tại (cache kết quả)"""
@@ -471,25 +295,36 @@ def logout():
     return redirect('/')
 
 # ============ MAIN ROUTES ============
+
 @app.route('/')
 def home():
     sort = request.args.get('sort', 'new')
     
-    if sort == 'new':
-        books_display = sorted(books_new, key=lambda x: x['id'], reverse=True)[:6]
-    elif sort == 'popular':
-        books_display = sorted(books_new, key=lambda x: x['downloads'], reverse=True)[:6]
-    elif sort == 'views':
-        books_display = sorted(books_new, key=lambda x: x['views'], reverse=True)[:6]
-    else:
-        books_display = books_hot
-    
-    return render_template('index.html', 
-                         books_new=books_new[:6],
-                         books_popular=books_popular,
-                         books_hot=books_hot,
-                         categories=CATEGORIES)
-
+    try:
+        if sort == 'new':
+            books_display = sorted(get_all_books(), 
+                                  key=lambda x: x.get('id', 0), reverse=True)[:6]
+        elif sort == 'popular':
+            books_display = sorted(get_all_books(), 
+                                  key=lambda x: get_safe(x, 'downloads', 0), reverse=True)[:6]
+        elif sort == 'views':
+            books_display = sorted(get_all_books(), 
+                                  key=lambda x: get_safe(x, 'views', 0), reverse=True)[:6]
+        else:
+            books_display = books_hot
+        
+        return render_template('index.html', 
+                             books_new=get_all_books()[:6],
+                             books_popular=books_popular,
+                             books_hot=books_hot,
+                             categories=CATEGORIES)
+    except Exception as e:
+        print(f"❌ Error home: {str(e)}")
+        return render_template('index.html', 
+                             books_new=[],
+                             books_popular=[],
+                             books_hot=[],
+                             categories=CATEGORIES)
 @app.route('/book/<int:book_id>')
 def book_detail(book_id):
     book = get_book_by_id(book_id)
@@ -1059,7 +894,7 @@ def admin_add_borrow():
     
     # Kiểm tra đã mượn chưa
     for b in user.get('borrowed_books', []):
-        if b['book_id'] == book_id:
+        if b.get('book_id') == book_id:
             return jsonify({'success': False, 'message': 'Người dùng đã mượn sách này'}), 400
     
     borrow_date = datetime.now().strftime('%Y-%m-%d')
@@ -1067,11 +902,14 @@ def admin_add_borrow():
     
     new_borrow = {
         'book_id': book_id,
-        'title': book['title'],
+        'title': book.get('title', 'N/A'),
         'borrow_date': borrow_date,
         'due_date': due_date,
         'status': 'đang mượn'
     }
+    
+    if 'borrowed_books' not in user:
+        user['borrowed_books'] = []
     
     user['borrowed_books'].append(new_borrow)
     
